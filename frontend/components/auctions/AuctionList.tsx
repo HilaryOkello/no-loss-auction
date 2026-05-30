@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { getAllAuctions } from "@/lib/contract"
 import { Auction } from "@/types/auction"
 import { AuctionCard } from "./AuctionCard"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export function AuctionList() {
   const [auctions, setAuctions] = useState<Auction[]>([])
@@ -17,7 +18,6 @@ export function AuctionList() {
       setAuctions(data.reverse())
       setError("")
     } catch (e: unknown) {
-      console.error(e)
       setError((e as Error).message ?? "Failed to load auctions")
     } finally {
       setLoading(false)
@@ -34,7 +34,7 @@ export function AuctionList() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-52 rounded-xl bg-muted animate-pulse" />
+          <div key={i} className="h-56 rounded-2xl bg-slate-100 animate-pulse" />
         ))}
       </div>
     )
@@ -42,18 +42,29 @@ export function AuctionList() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>Failed to load auctions: {error}</AlertDescription>
-      </Alert>
+      <div className="text-center py-16 px-4">
+        <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          {error}
+        </p>
+      </div>
     )
   }
 
   if (auctions.length === 0) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-4xl mb-3">🏷️</p>
-        <p className="font-medium">No auctions yet.</p>
-        <p className="text-sm mt-1">Be the first to create one.</p>
+      <div className="text-center py-24 px-4">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl">🏷️</span>
+        </div>
+        <h3 className="font-semibold text-slate-800 text-lg">No auctions yet</h3>
+        <p className="text-slate-500 text-sm mt-1 mb-6">
+          Be the first to list something on BidStar.
+        </p>
+        <Link href="/create">
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            Create First Auction
+          </Button>
+        </Link>
       </div>
     )
   }

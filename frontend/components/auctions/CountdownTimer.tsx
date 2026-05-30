@@ -1,34 +1,36 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Badge } from "@/components/ui/badge"
 
-function formatCountdown(secondsLeft: number): string {
-  if (secondsLeft <= 0) return "Ended"
-  const h = Math.floor(secondsLeft / 3600)
-  const m = Math.floor((secondsLeft % 3600) / 60)
-  const s = secondsLeft % 60
-  if (h > 0) return `${h}h ${m}m ${s}s`
-  if (m > 0) return `${m}m ${s}s`
-  return `${s}s`
+function formatCountdown(s: number): string {
+  if (s <= 0) return "Ended"
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}h ${m}m ${sec}s`
+  if (m > 0) return `${m}m ${sec}s`
+  return `${sec}s`
 }
 
 export function CountdownTimer({ deadline }: { deadline: number }) {
-  const [secondsLeft, setSecondsLeft] = useState(
-    Math.max(0, deadline - Math.floor(Date.now() / 1000))
-  )
+  const [left, setLeft] = useState(Math.max(0, deadline - Math.floor(Date.now() / 1000)))
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsLeft(Math.max(0, deadline - Math.floor(Date.now() / 1000)))
-    }, 1000)
-    return () => clearInterval(interval)
+    const t = setInterval(
+      () => setLeft(Math.max(0, deadline - Math.floor(Date.now() / 1000))),
+      1000
+    )
+    return () => clearInterval(t)
   }, [deadline])
 
-  const ended = secondsLeft === 0
+  const ended = left === 0
   return (
-    <Badge variant={ended ? "destructive" : "secondary"} className="text-xs">
-      {ended ? "Ended" : `⏱ ${formatCountdown(secondsLeft)}`}
-    </Badge>
+    <span
+      className={`text-xs font-mono font-medium ${
+        ended ? "text-red-500" : left < 3600 ? "text-amber-600" : "text-slate-500"
+      }`}
+    >
+      {ended ? "Ended" : `⏱ ${formatCountdown(left)}`}
+    </span>
   )
 }
