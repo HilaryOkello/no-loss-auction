@@ -57,7 +57,7 @@ export function CreateAuctionForm() {
     } catch (e: unknown) {
       const msg = (e as Error).message ?? "Failed to create auction"
       setError(msg)
-      toast.error(msg)
+      toast.error(msg.includes("friendbot") ? "Account not funded — use ⚡ Fund Account in navbar" : msg)
     } finally {
       setBusy(false)
     }
@@ -72,7 +72,11 @@ export function CreateAuctionForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {error.includes("friendbot")
+                  ? "Account not funded. Use the ⚡ Fund Account button in the navbar, then try again."
+                  : error}
+              </AlertDescription>
             </Alert>
           )}
 
