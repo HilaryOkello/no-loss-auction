@@ -2,7 +2,7 @@ import {
   Contract,
   Networks,
   TransactionBuilder,
-  SorobanRpc,
+  rpc as SorobanRpc,
   nativeToScVal,
   scValToNative,
   Address,
@@ -85,15 +85,17 @@ export async function submitSignedTx(signedXdr: string): Promise<string> {
   if (sendResult.status === "ERROR") {
     throw new Error(JSON.stringify(sendResult.errorResult))
   }
-  let hash = sendResult.hash
-  let status = sendResult.status
-  while (status === "PENDING" || status === "NOT_FOUND") {
+  const hash = sendResult.hash
+  let done = false
+  while (!done) {
     await new Promise((r) => setTimeout(r, 2000))
     const poll = await server.getTransaction(hash)
-    if (poll.status !== "NOT_FOUND") {
-      if (poll.status === "FAILED") throw new Error("Transaction failed")
-      status = poll.status
+    if (poll.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+      done = true
+    } else if (poll.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+      throw new Error("Transaction failed")
     }
+    // NOT_FOUND = still pending, keep polling
   }
   return hash
 }

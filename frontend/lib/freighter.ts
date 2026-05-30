@@ -2,8 +2,9 @@
 
 import {
   isConnected,
-  getPublicKey,
+  getAddress,
   signTransaction,
+  requestAccess,
 } from "@stellar/freighter-api"
 
 export async function checkFreighter(): Promise<boolean> {
@@ -20,9 +21,10 @@ export async function connectWallet(): Promise<string> {
   if (!connected) {
     throw new Error("Freighter not installed. Install from freighter.app")
   }
-  const result = await getPublicKey()
+  await requestAccess()
+  const result = await getAddress()
   if (result.error) throw new Error(result.error)
-  return result.publicKey
+  return result.address
 }
 
 export async function signTx(
