@@ -47,6 +47,9 @@ export async function signTx(
   xdr: string,
   networkPassphrase: string
 ): Promise<string> {
+  // Ensure site is connected — required on every new session/domain
+  await requestAccess()
+
   // Re-check network right before signing to give helpful error
   const currentPassphrase = await getFreighterNetwork()
   if (currentPassphrase && !isTestnet(currentPassphrase)) {
