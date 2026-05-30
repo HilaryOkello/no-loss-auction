@@ -1,6 +1,7 @@
 import {
   Account,
   Contract,
+  Keypair,
   Networks,
   TransactionBuilder,
   rpc as SorobanRpc,
@@ -18,10 +19,9 @@ const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID!
 const TOKEN_ID = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ID!
 const NETWORK_PASSPHRASE = Networks.TESTNET
 
-// Lazily created — avoids stellar-sdk Account constructor running at SSR module init
-const DUMMY_KEY = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN"
+// Random keypair per call — always a valid key, no hardcoded address needed
 function dummyAccount() {
-  return new Account(DUMMY_KEY, "0")
+  return new Account(Keypair.random().publicKey(), "0")
 }
 
 export const server = new SorobanRpc.Server(RPC_URL)
