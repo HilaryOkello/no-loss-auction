@@ -6,14 +6,17 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
 export function ConnectWallet() {
-  const { publicKey, isFunded, connect, disconnect, fundAccount, isConnecting, isFunding, hasFreighter } =
+  const { publicKey, isFunded, isWrongNetwork, connect, disconnect, fundAccount, isConnecting, isFunding, hasFreighter } =
     useWallet()
 
   if (publicKey) {
     return (
       <div className="flex items-center gap-2">
-        <Badge variant="secondary" className="font-mono text-xs">
-          {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
+        <Badge
+          variant={isWrongNetwork ? "destructive" : "secondary"}
+          className="font-mono text-xs"
+        >
+          {isWrongNetwork ? "⚠ Mainnet" : `${publicKey.slice(0, 6)}...${publicKey.slice(-4)}`}
         </Badge>
 
         {!isFunded && (

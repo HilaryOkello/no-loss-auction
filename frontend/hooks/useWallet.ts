@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect, createContext, useContext } from "react"
-import { checkFreighter, connectWallet } from "@/lib/freighter"
+import { checkFreighter, connectWallet, getFreighterNetwork, isTestnet } from "@/lib/freighter"
 import { isAccountFunded, fundWithFriendbot } from "@/lib/friendbot"
 
 interface WalletContextType {
   publicKey: string | null
   isFunded: boolean
+  isWrongNetwork: boolean
   connect: () => Promise<void>
   disconnect: () => void
   fundAccount: () => Promise<void>
@@ -18,6 +19,7 @@ interface WalletContextType {
 export const WalletContext = createContext<WalletContextType>({
   publicKey: null,
   isFunded: false,
+  isWrongNetwork: false,
   connect: async () => {},
   disconnect: () => {},
   fundAccount: async () => {},
@@ -33,6 +35,7 @@ export function useWallet() {
 export function useWalletState(): WalletContextType {
   const [publicKey, setPublicKey] = useState<string | null>(null)
   const [isFunded, setIsFunded] = useState(false)
+  const [isWrongNetwork, setIsWrongNetwork] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [isFunding, setIsFunding] = useState(false)
   const [hasFreighter, setHasFreighter] = useState(false)
@@ -46,14 +49,30 @@ export function useWalletState(): WalletContextType {
     }
   }, [])
 
+  // Poll network every 5s so banner updates if user switches in Freighter
+  useEffect(() => {
+    if (!publicKey) return
+    const check = async () => {
+      const passphrase = await getFreighterNetwork()
+      if (passphrase) setIsWrongNetwork(!isTestnet(passphrase))
+    }
+    check()
+    const interval = setInterval(check, 5000)
+    return () => clearInterval(interval)
+  }, [publicKey])
+
   const connect = async () => {
     setIsConnecting(true)
     try {
       const key = await connectWallet()
       setPublicKey(key)
       localStorage.setItem("walletPublicKey", key)
-      const funded = await isAccountFunded(key)
+      const [funded, passphrase] = await Promise.all([
+        isAccountFunded(key),
+        getFreighterNetwork(),
+      ])
       setIsFunded(funded)
+      if (passphrase) setIsWrongNetwork(!isTestnet(passphrase))
     } catch (e) {
       console.error(e)
     } finally {
@@ -64,6 +83,7 @@ export function useWalletState(): WalletContextType {
   const disconnect = () => {
     setPublicKey(null)
     setIsFunded(false)
+    setIsWrongNetwork(false)
     localStorage.removeItem("walletPublicKey")
   }
 
@@ -78,5 +98,5 @@ export function useWalletState(): WalletContextType {
     }
   }
 
-  return { publicKey, isFunded, connect, disconnect, fundAccount, isConnecting, isFunding, hasFreighter }
+  return { publicKey, isFunded, isWrongNetwork, connect, disconnect, fundAccount, isConnecting, isFunding, hasFreighter }
 }
