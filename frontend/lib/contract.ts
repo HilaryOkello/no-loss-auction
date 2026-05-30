@@ -28,24 +28,40 @@ export const server = new SorobanRpc.Server(RPC_URL)
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+function parseStatus(raw: unknown): Auction["status"] {
+  // scValToNative returns enum as { VariantName: null } or plain string
+  if (typeof raw === "string") {
+    if (raw === "Finalized") return "Finalized"
+    if (raw === "Cancelled") return "Cancelled"
+    return "Open"
+  }
+  if (raw && typeof raw === "object") {
+    if ("Finalized" in raw) return "Finalized"
+    if ("Cancelled" in raw) return "Cancelled"
+  }
+  return "Open"
+}
+
+function toBigInt(val: unknown): bigint {
+  if (typeof val === "bigint") return val
+  if (typeof val === "number") return BigInt(val)
+  if (typeof val === "string") return BigInt(val)
+  return 0n
+}
+
 function scValToAuction(val: xdr.ScVal): Auction {
   const raw = scValToNative(val) as Record<string, unknown>
-
-  const statusRaw = raw.status as Record<string, unknown>
-  let status: Auction["status"] = "Open"
-  if ("Finalized" in statusRaw) status = "Finalized"
-  else if ("Cancelled" in statusRaw) status = "Cancelled"
 
   return {
     auction_id: Number(raw.auction_id),
     seller: raw.seller as string,
     token: raw.token as string,
     title: raw.title as string,
-    min_bid: BigInt(raw.min_bid as string),
+    min_bid: toBigInt(raw.min_bid),
     deadline: Number(raw.deadline),
-    highest_bid: BigInt(raw.highest_bid as string),
-    highest_bidder: (raw.highest_bidder as string | null) ?? null,
-    status,
+    highest_bid: toBigInt(raw.highest_bid),
+    highest_bidder: (raw.highest_bidder as string | undefined) ?? null,
+    status: parseStatus(raw.status),
   }
 }
 
@@ -126,14 +142,11 @@ export async function submitSignedTx(signedXdr: string): Promise<string> {
 // ── read functions ────────────────────────────────────────────────────────────
 
 export async function getAuctionCount(): Promise<number> {
-  try {
-    const retval = await readSimulate(
-      new Contract(CONTRACT_ID).call("get_auction_count")
-    )
-    return Number(scValToNative(retval))
-  } catch {
-    return 0
-  }
+  const retval = await readSimulate(
+    new Contract(CONTRACT_ID).call("get_auction_count")
+  )
+  const val = scValToNative(retval)
+  return Number(val)
 }
 
 export async function getAuction(id: number): Promise<Auction> {
